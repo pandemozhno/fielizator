@@ -1,4 +1,4 @@
-# upload
+# filelizator
 
 Лёгкий middleware для загрузки файлов в Express — **без зависимостей** и **без multer**. Поддерживает `multipart/form-data` и `application/json` (включая data URL, base64, массивы байт и `Buffer`).
 
