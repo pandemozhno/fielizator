@@ -1,0 +1,54 @@
+{
+  "name": "fielizator",
+  "version": "1.0.0",
+  "description": "Zero-dependency file upload middleware for Express. Supports multipart/form-data and JSON (data URL, base64, byte arrays, Buffer).",
+  "keywords": [
+    "express",
+    "upload",
+    "file",
+    "multipart",
+    "form-data",
+    "json",
+    "base64",
+    "middleware",
+    "multer",
+    "no-dependencies"
+  ],
+  "license": "MIT",
+  "author": "Andrey Brilenko postfunction@gmail.com",
+  "homepage": "https://github.com/pandemozhno/filizator/tree/main#filelizator",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pandemozhno/filizator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pandemozhno/filizator/issues"
+  },
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=14"
+  },
+  "scripts": {
+    "test": "node --test test/",
+    "lint": "eslint .",
+    "prepublishOnly": "npm test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "express": "^4.19.2"
+  },
+  "peerDependencies": {
+    "express": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "express": { "optional": true }
+  }
+}
