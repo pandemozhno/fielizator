@@ -49,6 +49,8 @@
     "express": ">=4"
   },
   "peerDependenciesMeta": {
-    "express": { "optional": true }
+    "express": {
+      "optional": true
+    }
   }
 }
