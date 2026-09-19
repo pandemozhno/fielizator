@@ -1,9 +1,9 @@
 # filelizator
 
-Лёгкий middleware для загрузки файлов в Express — **без зависимостей** и **без multer**. Поддерживает `multipart/form-data` и `application/json` (включая data URL, base64, массивы байт и `Buffer`).
+Zero-dependency file upload middleware for Express. Supports `multipart/form-data` and `application/json` (data URLs, base64, byte arrays, and `Buffer`).
 
 ```js
-const upload = require('./upload');
+const upload = require('filelizator');
 
 app.post('/avatar',
   upload.to('uploads/avatars').single('file'),
@@ -13,93 +13,129 @@ app.post('/avatar',
 
 ---
 
-## Содержание
+## Table of Contents
 
-- [Возможности](#возможности)
-- [Требования](#требования)
-- [Установка](#установка)
-- [Быстрый старт](#быстрый-старт)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick start](#quick-start)
 - [API](#api)
-  - [Методы цепочки](#методы-цепочки)
-  - [Middleware-фабрики](#middleware-фабрики)
-- [Форматы запросов](#форматы-запросов)
+  - [Chainable methods](#chainable-methods)
+  - [Middleware factories](#middleware-factories)
+- [Request formats](#request-formats)
   - [multipart/form-data](#multipartform-data)
   - [application/json](#applicationjson)
-- [Объект файла](#объект-файла)
-- [Ошибки](#ошибки)
-- [Примеры](#примеры)
-- [Ограничения](#ограничения)
-- [Лицензия](#лицензия)
+- [File object](#file-object)
+- [Errors](#errors)
+- [Examples](#examples)
+- [Limitations](#limitations)
+- [License](#license)
 
 ---
 
-## Возможности
+## Features
 
-- 🚫 **Ноль зависимостей** — собственный streaming-парсер multipart.
-- 🔀 **Два формата тела** — `multipart/form-data` и `application/json`.
-- 📦 **5 способов передать файл в JSON**: data URL, base64-строка, `{data,name}`, массив байт, `Buffer`.
-- ⚡ **Streaming** — файлы из multipart пишутся на диск сразу, без буферизации в памяти.
+- 🚫 **Zero dependencies** — own streaming multipart parser.
+- 🔀 **Two body formats** — `multipart/form-data` and `application/json`.
+- 📦 **5 ways to send a file in JSON**: data URL, plain base64, `{data,name}` object, byte array, `Buffer`.
+- ⚡ **Streaming** — multipart files are written straight to disk, no in-memory buffering.
 - 🎯 **Fluent API**: `upload.to('dir').limits({...}).single('file')`.
-- 🧹 **Автоочистка** — при ошибке все частично записанные файлы удаляются.
-- 🛡️ **Лимиты**, `fileFilter`, sniffing MIME по сигнатуре.
-- 🔒 **Иммутабельный API** — `upload.to('a')` не мутирует базовый инстанс.
-- 🧩 Совместим с `express.json()` — если body уже прочитан, используем его.
+- 🧹 **Auto-cleanup** — partially written files are removed on error.
+- 🛡️ **Limits**, `fileFilter`, and MIME sniffing by signature.
+- 🔒 **Immutable API** — `upload.to('a')` never mutates the base instance.
+- 🧩 Works alongside `express.json()` — reuses an already-parsed body.
 
 ---
 
-## Требования
+## Requirements
 
-- **Node.js ≥ 14** (используются `fs.promises`, `??`, `?.`).
-- **Express 4 или 5**.
-
----
-
-## Установка
-
-Модуль не требует npm-пакетов — просто скопируйте `upload.js` в проект:
-
-```
-project/
-├── upload.js
-├── server.js
-└── package.json
-```
-
-И импортируйте:
-
-```js
-const upload = require('./upload');
-```
+- **Node.js ≥ 14** (uses `fs.promises`, `??`, `?.`).
+- **Express 4 or 5**.
 
 ---
 
-## Быстрый старт
+## Installation
+
+### From npm
+
+```bash
+npm install filelizator
+```
+
+With yarn:
+
+```bash
+yarn add filelizator
+```
+
+With pnpm:
+
+```bash
+pnpm add filelizator
+```
+
+Then import it in your code:
 
 ```js
 const express = require('express');
-const upload = require('./upload');
+const upload = require('filelizator');
+
+const app = express();
+```
+
+ESM:
+
+```js
+import express from 'express';
+import upload from 'filelizator';
+```
+
+TypeScript — types are bundled, no extra `@types/*` package needed:
+
+```ts
+import express from 'express';
+import upload from 'filelizator';
+```
+
+### From source (git)
+
+```bash
+git clone https://github.com/pandemozhno/filizator.git
+cd filelizator
+npm install
+```
+
+Or copy `index.js` manually into your project and `require('./index.js')`.
+
+---
+
+## Quick start
+
+```js
+const express = require('express');
+const upload = require('filelizator');
 
 const app = express();
 
-// Один файл
+// Single file
 app.post('/avatar',
   upload.to('uploads/avatars').single('file'),
   (req, res) => res.json({ file: req.file }),
 );
 
-// Несколько файлов
+// Multiple files
 app.post('/photos',
   upload.to('uploads/photos').array('photos', 5),
   (req, res) => res.json({ files: req.files }),
 );
 
-// Динамическая папка
+// Dynamic destination
 app.post('/user-upload',
   upload.to((req) => `uploads/users/${req.user?.id ?? 'anon'}`).single('file'),
   (req, res) => res.json({ file: req.file }),
 );
 
-// Обработчик ошибок
+// Error handler
 app.use((err, req, res, next) => {
   if (err?.name === 'UploadError') {
     return res.status(err.status).json({ error: err.code, message: err.message });
@@ -114,25 +150,25 @@ app.listen(3000);
 
 ## API
 
-### Методы цепочки
+### Chainable methods
 
-Все методы возвращают **новый** инстанс — базовый `upload` не меняется.
+Every method returns a **new** instance — the base `upload` object is never mutated.
 
 #### `.to(dir)`
 
-Папка назначения. Может быть строкой или функцией `(req) => string`.
+Destination folder. A string or a function `(req) => string`.
 
 ```js
 upload.to('uploads/avatars')
 upload.to((req) => `uploads/${req.user.id}`)
 ```
 
-Папка создаётся автоматически (рекурсивно).
+The folder is created recursively if it doesn't exist.
 
 #### `.limits({ fileSize, files })`
 
-- `fileSize` — максимальный размер одного файла в байтах (по умолчанию `50 * 1024 * 1024`).
-- `files` — максимальное количество файлов (по умолчанию `20`).
+- `fileSize` — maximum size of a single file in bytes (default `50 * 1024 * 1024`).
+- `files` — maximum number of files (default `20`).
 
 ```js
 upload.limits({ fileSize: 5 * 1024 * 1024, files: 3 })
@@ -140,19 +176,19 @@ upload.limits({ fileSize: 5 * 1024 * 1024, files: 3 })
 
 #### `.filename(fn)`
 
-Функция генерации имени файла. Получает `{ originalname }`, возвращает строку.
+Filename generator. Receives `{ originalname }`, returns a string.
 
 ```js
 upload.filename(({ originalname }) => `${Date.now()}-${originalname}`)
 ```
 
-По умолчанию: `timestamp-randomHex + ext`.
+Default: `timestamp-randomHex + ext`.
 
 #### `.fileFilter(fn)`
 
-Фильтр файлов. Функция `(req, file) => boolean | Promise<boolean>`. Если `false` — ошибка `LIMIT_UNEXPECTED_FILE`.
+File filter. `(req, file) => boolean | Promise<boolean>`. Returning `false` raises `LIMIT_UNEXPECTED_FILE`.
 
-> В multipart-режиме `req === null`, потому что парсер работает до передачи управления в middleware.
+> In multipart mode `req === null` because the parser runs before the middleware is invoked.
 
 ```js
 upload.fileFilter((req, file) => file.mimetype.startsWith('image/'))
@@ -160,7 +196,7 @@ upload.fileFilter((req, file) => file.mimetype.startsWith('image/'))
 
 #### `.sniffMimetype(on = true)`
 
-Определяет MIME по сигнатуре файла. Поддерживаются PNG, JPEG, GIF, WEBP, PDF, ZIP, MP3. Если у имени нет расширения — оно дописывается.
+Detects MIME by file signature. Supports PNG, JPEG, GIF, WEBP, PDF, ZIP, MP3. If the filename has no extension, one is appended.
 
 ```js
 upload.sniffMimetype()
@@ -168,7 +204,7 @@ upload.sniffMimetype()
 
 #### `.jsonLimit(bytes)`
 
-Явный лимит на размер JSON-тела. По умолчанию `fileSize × files × 2` (минимум 1 МБ).
+Explicit JSON body size limit. Defaults to `fileSize × files × 2` (min 1 MB).
 
 ```js
 upload.jsonLimit(50 * 1024 * 1024)
@@ -176,42 +212,42 @@ upload.jsonLimit(50 * 1024 * 1024)
 
 ---
 
-### Middleware-фабрики
+### Middleware factories
 
-Возвращают обычный express-middleware `(req, res, next)`.
+Each returns a regular Express middleware `(req, res, next)`.
 
 #### `.single(field)`
 
-Один файл в `req.file`.
+One file in `req.file`.
 
 ```js
-app.post('/upload', upload.to('uploads').single('file'), handler)
+app.post('/upload', upload.to('uploads').single('file'), handler);
 // req.file = { fieldname, originalname, ... } | null
 ```
 
 #### `.array(field, maxCount = 10)`
 
-Массив файлов (все с одним именем поля) в `req.files`.
+Array of files (same field name) in `req.files`.
 
 ```js
-app.post('/upload', upload.to('uploads').array('photos', 5), handler)
+app.post('/upload', upload.to('uploads').array('photos', 5), handler);
 // req.files = [ { ... }, { ... } ]
 ```
 
 #### `.any()`
 
-Любые файлы в `req.files`.
+Any files in `req.files`.
 
 ```js
-app.post('/upload', upload.to('uploads').any(), handler)
+app.post('/upload', upload.to('uploads').any(), handler);
 ```
 
 #### `.none()`
 
-Принимает **только** текстовые поля. Файлы → ошибка.
+Accepts **only** text fields. Files produce an error.
 
 ```js
-app.post('/comments', upload.to('uploads').none(), handler)
+app.post('/comments', upload.to('uploads').none(), handler);
 // req.body  = { text: '...' }
 // req.file  === undefined
 // req.files === undefined
@@ -219,7 +255,7 @@ app.post('/comments', upload.to('uploads').none(), handler)
 
 #### `.fields([{ name, maxCount }, ...])`
 
-Разные поля — `req.files` становится объектом.
+Different fields — `req.files` becomes an object keyed by field name.
 
 ```js
 app.post('/profile',
@@ -235,27 +271,27 @@ app.post('/profile',
 
 ---
 
-## Форматы запросов
+## Request formats
 
 ### multipart/form-data
 
-Классическая отправка формы с файлами. Парсер стримит данные сразу на диск.
+Classic form upload. Files are streamed directly to disk.
 
 ```bash
 curl -F "file=@photo.png" http://localhost:3000/upload
 ```
 
-Особенности:
+Notes:
 
-- Поддерживается `filename*=` (RFC 5987) — UTF-8 имена.
-- Текстовые поля попадают в `req.body`.
-- Повторяющиеся поля собираются в массив.
+- `filename*=` (RFC 5987) is supported — UTF-8 filenames work.
+- Text fields end up in `req.body`.
+- Repeated fields are collected into an array.
 
 ---
 
 ### application/json
 
-Тело — JSON-объект. Поле, объявленное в `.single(field)` / `.array(field)` / `.fields(...)`, извлекается как файл и удаляется из `req.body`. В режиме `.any()` файлы распознаются по «похожести» на файл, а обычные значения остаются в `req.body`.
+The body is a JSON object. A field declared in `.single(field)` / `.array(field)` / `.fields(...)` is extracted as a file and removed from `req.body`. In `.any()` mode, files are detected by shape and regular values stay in `req.body`.
 
 #### 1. Data URL
 
@@ -271,11 +307,11 @@ app.post('/upload', upload.to('uploads').single('file'), handler);
 // req.file.originalname === 'file.png'
 ```
 
-#### 2. Объект с полями
+#### 2. Object with metadata
 
 ```json
 {
-  "title": "Отчёт",
+  "title": "Report",
   "file": {
     "name": "report.pdf",
     "mimetype": "application/pdf",
@@ -288,15 +324,15 @@ app.post('/upload', upload.to('uploads').single('file'), handler);
 ```js
 // req.file.originalname === 'report.pdf'
 // req.file.mimetype     === 'application/pdf'
-// req.body.title        === 'Отчёт'
+// req.body.title        === 'Report'
 // req.body.file         === undefined
 ```
 
-Поддерживаемые `encoding`: `base64` (по умолчанию), `utf8`, `hex`, `latin1`.
+Supported `encoding` values: `base64` (default), `utf8`, `hex`, `latin1`.
 
-#### 3. Чистая base64
+#### 3. Plain base64
 
-Только для полей, объявленных явно (`.single` / `.array` / `.fields`).
+Only for fields declared explicitly via `.single` / `.array` / `.fields`.
 
 ```json
 { "file": "iVBORw0KGgoAAAANSUhEUg..." }
@@ -306,7 +342,7 @@ app.post('/upload', upload.to('uploads').single('file'), handler);
 app.post('/upload', upload.to('uploads').single('file'), handler);
 ```
 
-#### 4. Массив байт
+#### 4. Byte array
 
 ```json
 {
@@ -320,7 +356,7 @@ app.post('/upload', upload.to('uploads').single('file'), handler);
 // req.file.size     === 12
 ```
 
-#### 5. Массив байт внутри объекта
+#### 5. Byte array inside an object
 
 ```json
 {
@@ -332,9 +368,9 @@ app.post('/upload', upload.to('uploads').single('file'), handler);
 }
 ```
 
-#### 6. Несколько файлов
+#### 6. Multiple files
 
-Массив массивов байт:
+Array of byte arrays:
 
 ```json
 {
@@ -345,7 +381,7 @@ app.post('/upload', upload.to('uploads').single('file'), handler);
 }
 ```
 
-Смешанный массив:
+Mixed array:
 
 ```json
 {
@@ -357,49 +393,49 @@ app.post('/upload', upload.to('uploads').single('file'), handler);
 }
 ```
 
-Оба работают через `.array('photos', 10)` или `.any()`.
+Both work with `.array('photos', 10)` or `.any()`.
 
 ---
 
-## Объект файла
+## File object
 
 ```ts
 {
-  fieldname: string;      // имя поля из формы
-  originalname: string;   // исходное имя файла
-  filename: string;       // итоговое имя (по .filename() или по умолчанию)
-  path: string;           // полный путь на диске
-  destination: string;    // папка назначения
-  mimetype: string;       // MIME-тип
-  size: number;           // размер в байтах
+  fieldname: string;      // form field name
+  originalname: string;   // original filename
+  filename: string;       // final filename (from .filename() or default)
+  path: string;           // full disk path
+  destination: string;    // destination folder
+  mimetype: string;       // MIME type
+  size: number;           // size in bytes
 }
 ```
 
 ---
 
-## Ошибки
+## Errors
 
-Все ошибки — экземпляры `UploadError`:
+All errors are instances of `UploadError`:
 
 ```ts
 class UploadError extends Error {
   code: string;    // LIMIT_FILE_SIZE, LIMIT_FILE_COUNT, ...
-  status: number;  // HTTP-статус
+  status: number;  // HTTP status
 }
 ```
 
-| `code`                  | `status` | Когда                                |
-| ----------------------- | -------- | ------------------------------------ |
-| `LIMIT_FILE_SIZE`       | 413      | Файл больше `limits.fileSize`        |
-| `LIMIT_FILE_COUNT`      | 413      | Файлов больше `maxCount`             |
-| `LIMIT_BODY_SIZE`       | 413      | JSON-тело больше `jsonLimit`         |
-| `LIMIT_UNEXPECTED_FILE` | 400      | Файл отклонён `fileFilter`           |
-| `REQUEST_ABORTED`       | 499      | Клиент разорвал соединение           |
-| `UPLOAD_ERROR`          | 400      | Остальные ошибки (невалидный JSON и т. п.) |
+| `code`                  | `status` | When                                          |
+| ----------------------- | -------- | --------------------------------------------- |
+| `LIMIT_FILE_SIZE`       | 413      | File exceeds `limits.fileSize`                |
+| `LIMIT_FILE_COUNT`      | 413      | More files than `maxCount`                    |
+| `LIMIT_BODY_SIZE`       | 413      | JSON body exceeds `jsonLimit`                 |
+| `LIMIT_UNEXPECTED_FILE` | 400      | File rejected by `fileFilter`                 |
+| `REQUEST_ABORTED`       | 499      | Client aborted the request                    |
+| `UPLOAD_ERROR`          | 400      | Any other error (invalid JSON, non-file field)|
 
-При любой ошибке **все уже записанные файлы этого запроса удаляются**.
+On any error **all files already written for that request are removed**.
 
-Пример обработчика:
+Example handler:
 
 ```js
 app.use((err, req, res, next) => {
@@ -415,9 +451,9 @@ app.use((err, req, res, next) => {
 
 ---
 
-## Примеры
+## Examples
 
-### Аватар с проверкой MIME
+### Avatar with MIME check
 
 ```js
 app.post('/avatar',
@@ -431,19 +467,19 @@ app.post('/avatar',
 );
 ```
 
-### Несколько документов и метаданные
+### Multiple documents with metadata
 
 ```js
 app.post('/docs',
   upload.to('uploads/docs').array('docs', 5),
   (req, res) => res.json({
     files: req.files,
-    meta: req.body, // остальные поля из формы
+    meta: req.body, // remaining form fields
   }),
 );
 ```
 
-### Загрузка в папку пользователя
+### Upload into a user-specific folder
 
 ```js
 const auth = (req, res, next) => { req.user = { id: 42 }; next(); };
@@ -455,7 +491,7 @@ app.post('/me/upload',
 );
 ```
 
-### Только текстовые поля (без файлов)
+### Text fields only (no files)
 
 ```js
 app.post('/comments',
@@ -464,7 +500,7 @@ app.post('/comments',
 );
 ```
 
-### Загрузка base64 из JSON
+### Base64 upload via JSON
 
 ```bash
 curl -X POST http://localhost:3000/avatar \
@@ -479,7 +515,7 @@ app.post('/avatar',
 );
 ```
 
-### Загрузка массива байт из JSON
+### Byte array upload via JSON
 
 ```bash
 curl -X POST http://localhost:3000/avatar \
@@ -493,27 +529,27 @@ app.post('/avatar',
   (req, res) => res.json({ file: req.file }),
 );
 // req.file.mimetype === 'image/png'
-// req.file.filename оканчивается на .png
+// req.file.filename ends with .png
 ```
 
 ---
 
-## Ограничения
+## Limitations
 
-- JSON-файлы буферизуются в памяти целиком (base64/массив байт парсится как строка/массив). Для больших файлов используйте `multipart/form-data`.
-- Парсер multipart не поддерживает `Content-Transfer-Encoding: base64/quoted-printable` внутри частей и вложенный `multipart/mixed`.
-- В `.fileFilter` для multipart `req === null` (парсер работает до вызова middleware).
-- В режиме `.any()` вложенные в JSON объекты глубоко не обходятся — только один уровень.
-- При совместном использовании с `express.json()` не забудьте увеличить его лимит:
+- JSON files are buffered entirely in memory (base64 / byte arrays are parsed as strings / arrays). For large files use `multipart/form-data`.
+- The multipart parser does not support `Content-Transfer-Encoding: base64/quoted-printable` inside parts, nor nested `multipart/mixed`.
+- In `.fileFilter` for multipart, `req === null` (the parser runs before the middleware is invoked).
+- In `.any()` mode, nested JSON objects are not traversed deeply — only one level.
+- When used together with `express.json()`, remember to raise its limit:
 
   ```js
   app.use(express.json({ limit: '100mb' }));
   ```
 
-- `.filename()` и `.fileFilter()` не защищают от `..` в имени файла, но `path.basename()` в парсере отбрасывает директории автоматически.
+- `.filename()` and `.fileFilter()` do not protect against `..` in a filename, but `path.basename()` in the parser strips directories automatically.
 
 ---
 
-## Лицензия
+## License
 
-MIT
+[MIT](./LICENSE)
