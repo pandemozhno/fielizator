@@ -41,7 +41,9 @@
     "lint": "eslint .",
     "prepublishOnly": "npm test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "busboy": "^1.6.0"
+  },
   "devDependencies": {
     "express": "^4.19.2"
   },

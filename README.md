@@ -1,6 +1,8 @@
 # filelizator
 
-Zero-dependency file upload middleware for Express. Supports `multipart/form-data` and `application/json` (data URLs, base64, byte arrays, and `Buffer`).
+file upload middleware for Express. Supports `multipart/form-data` and `application/json` (data URLs, base64, byte arrays, and `Buffer`).
+
+dependency busboy
 
 ```js
 const upload = require('filelizator');
