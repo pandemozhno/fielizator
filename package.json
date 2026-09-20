@@ -1,6 +1,6 @@
 {
   "name": "fielizator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zero-dependency file upload middleware for Express. Supports multipart/form-data and JSON (data URL, base64, byte arrays, Buffer).",
   "keywords": [
     "express",
