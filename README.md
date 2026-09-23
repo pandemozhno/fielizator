@@ -5,7 +5,7 @@ file upload middleware for Express. Supports `multipart/form-data` and `applicat
 dependency busboy
 
 ```js
-const upload = require('filelizator');
+const upload = require('fielizator');
 
 app.post('/avatar',
   upload.to('uploads/avatars').single('file'),
