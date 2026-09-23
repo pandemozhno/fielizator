@@ -469,6 +469,24 @@ app.post('/avatar',
 );
 ```
 
+### File filter upload to
+
+```js
+app.post('/avatar',
+  upload
+    .fileFilter((req, file) => {
+      let path = null
+      if (file.mimetype.startsWith('image/')) path = 'image'
+      if (file.mimetype.startsWith('video/')) path = 'video'
+      req.filePath = path
+    })
+    .to((req) => `/uploads/${req.filePath}`)
+    .limits({ fileSize: 150 * 1024 * 1024 })
+    .single('payload'),
+  (req, res) => res.json({ payload: req.payload }),
+);
+```
+
 ### Multiple documents with metadata
 
 ```js
