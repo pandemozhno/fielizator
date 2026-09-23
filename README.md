@@ -1,4 +1,4 @@
-# filelizator
+# fielizator
 
 file upload middleware for Express. Supports `multipart/form-data` and `application/json` (data URLs, base64, byte arrays, and `Buffer`).
 
@@ -61,26 +61,26 @@ app.post('/avatar',
 ### From npm
 
 ```bash
-npm install filelizator
+npm install fielizator
 ```
 
 With yarn:
 
 ```bash
-yarn add filelizator
+yarn add fielizator
 ```
 
 With pnpm:
 
 ```bash
-pnpm add filelizator
+pnpm add fielizator
 ```
 
 Then import it in your code:
 
 ```js
 const express = require('express');
-const upload = require('filelizator');
+const upload = require('fielizator');
 
 const app = express();
 ```
@@ -89,21 +89,21 @@ ESM:
 
 ```js
 import express from 'express';
-import upload from 'filelizator';
+import upload from 'fielizator';
 ```
 
 TypeScript — types are bundled, no extra `@types/*` package needed:
 
 ```ts
 import express from 'express';
-import upload from 'filelizator';
+import upload from 'fielizator';
 ```
 
 ### From source (git)
 
 ```bash
 git clone https://github.com/pandemozhno/filizator.git
-cd filelizator
+cd fielizator
 npm install
 ```
 
@@ -115,7 +115,7 @@ Or copy `index.js` manually into your project and `require('./index.js')`.
 
 ```js
 const express = require('express');
-const upload = require('filelizator');
+const upload = require('fielizator');
 
 const app = express();
 
