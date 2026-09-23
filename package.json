@@ -16,13 +16,13 @@
   ],
   "license": "MIT",
   "author": "Andrey Brilenko postfunction@gmail.com",
-  "homepage": "https://github.com/pandemozhno/filizator/tree/main#filelizator",
+  "homepage": "https://github.com/pandemozhno/fielizator/tree/main",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pandemozhno/filizator.git"
+    "url": "git+https://github.com/pandemozhno/fielizator.git"
   },
   "bugs": {
-    "url": "https://github.com/pandemozhno/filizator/issues"
+    "url": "https://github.com/pandemozhno/fielizator/issues"
   },
   "main": "index.js",
   "types": "index.d.ts",
